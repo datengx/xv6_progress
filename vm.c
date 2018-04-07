@@ -68,6 +68,7 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
   for(;;){
     if((pte = walkpgdir(pgdir, a, 1)) == 0)
       return -1;
+    // See if the page table page has been mapped already
     if(*pte & PTE_P)
       panic("remap");
     *pte = pa | perm | PTE_P;
@@ -121,11 +122,17 @@ setupkvm(void)
   pde_t *pgdir;
   struct kmap *k;
 
+  // return a memory address that points to an page 
   if((pgdir = (pde_t*)kalloc()) == 0)
     return 0;
   memset(pgdir, 0, PGSIZE);
+  // If the virtual memory mapped for PHYSTOP is larger
+  // than DEVSPACE, it means the DEVSPACE, where the device 
+  // memory are mapped, can be overwritten
   if (P2V(PHYSTOP) > (void*)DEVSPACE)
     panic("PHYSTOP too high");
+
+  
   for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
     if(mappages(pgdir, k->virt, k->phys_end - k->phys_start,
                 (uint)k->phys_start, k->perm) < 0) {

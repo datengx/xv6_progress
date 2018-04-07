@@ -76,6 +76,8 @@ allocproc(void)
   struct proc *p;
   char *sp;
 
+  // acquire the lock since ptable is static and possible
+  // shared among different process
   acquire(&ptable.lock);
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
